@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useCookies } from "react-cookie";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Geist } from "next/font/google";
@@ -53,6 +55,16 @@ const FloatingShape = ({ className, delay = 0, duration = 20 }) => (
 );
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  const [cookies] = useCookies(["auth_token"]);
+
+  // Only check auth after client-side hydration to prevent SSR mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isLoggedIn = mounted && !!cookies.auth_token;
+
   return (
     <div className={`${geistSans.className} min-h-screen bg-background overflow-hidden`}>
       {/* Animated Background */}
@@ -115,12 +127,12 @@ export default function Home() {
               WorkNote
             </span>
           </Link>
-          <Link href="/login">
+          <Link href={isLoggedIn ? "/dashboard" : "/login"}>
             <Button
               size="sm"
               className="bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 hover:scale-105"
             >
-              Sign In
+              {isLoggedIn ? "Go to Dashboard" : "Sign In"}
             </Button>
           </Link>
         </div>
@@ -157,12 +169,12 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
-              <Link href="/login">
+              <Link href={isLoggedIn ? "/dashboard" : "/login"}>
                 <Button
                   size="lg"
                   className="group w-full sm:w-auto text-base px-8 py-6 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105"
                 >
-                  Get Started Free
+                  {isLoggedIn ? "Go to Dashboard" : "Get Started Free"}
                   <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
@@ -275,12 +287,12 @@ export default function Home() {
               <p className="relative text-muted-foreground text-lg mb-10 max-w-xl mx-auto">
                 Join thousands of professionals who use WorkNote to organize their work life and accelerate their careers.
               </p>
-              <Link href="/login">
+              <Link href={isLoggedIn ? "/dashboard" : "/login"}>
                 <Button
                   size="lg"
                   className="group relative text-base px-10 py-7 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 shadow-xl shadow-primary/30 hover:shadow-2xl hover:shadow-primary/40 transition-all duration-300 hover:scale-105"
                 >
-                  Start Your Free Account
+                  {isLoggedIn ? "Go to Dashboard" : "Start Your Free Account"}
                   <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>

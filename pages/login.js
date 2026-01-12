@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { GoogleLogin } from "@react-oauth/google";
+import { useCookies } from "react-cookie";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Geist } from "next/font/google";
 import api from "@/lib/api";
@@ -14,6 +15,7 @@ const geistSans = Geist({
 export default function Login() {
   const router = useRouter();
   const [error, setError] = useState(null);
+  const [, setCookie] = useCookies(["auth_token"]);
 
   // Check for error in URL params
   const urlError = router.query.error;
@@ -24,9 +26,14 @@ export default function Login() {
       // credentialResponse.credential is the JWT (ID token)
       const result = await api.googleLogin(credentialResponse.credential);
 
-      // Store the auth token
-      if (result.token) {
-        localStorage.setItem("auth_token", result.token);
+      // Store the auth token in cookie (API returns access_token)
+      if (result.access_token) {
+        setCookie("auth_token", result.access_token, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          sameSite: "strict",
+          secure: process.env.NODE_ENV === "production",
+        });
       }
 
       // Redirect to dashboard
