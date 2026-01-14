@@ -83,24 +83,24 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <div className="flex-1 flex min-h-0">
-        {/* Sidebar Navigation */}
-        <nav className="w-48 border-r border-border bg-muted/30 p-2 shrink-0">
-          <div className="space-y-1">
+        {/* Sidebar Navigation - Icon Only */}
+        <nav className="w-14 border-r border-border bg-muted/30 p-2 shrink-0 flex flex-col items-center">
+          <div className="space-y-2">
             {navItems.map((item) => {
               const isActive = item.id === activeSection;
               return (
                 <Link
                   key={item.id}
                   href={item.href}
+                  title={item.label}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "flex items-center justify-center w-10 h-10 rounded-lg transition-all",
                     isActive
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
                   {item.icon}
-                  {item.label}
                 </Link>
               );
             })}

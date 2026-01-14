@@ -74,6 +74,16 @@ export default function WorkLogsPage() {
     await loadWorkLogs();
   };
 
+  // Work log delete
+  const handleDeleteWorkLog = async (date) => {
+    const { error } = await api.deleteWorkLog(date);
+    if (error) {
+      console.error("Failed to delete work log:", error);
+      throw new Error(error.message || "Failed to delete work log");
+    }
+    await loadWorkLogs();
+  };
+
   // Logout
   const handleLogout = () => {
     removeCookie("auth_token", { path: "/" });
@@ -90,6 +100,7 @@ export default function WorkLogsPage() {
       <WorkLogPanel
         workLogs={workLogs}
         onSave={handleSaveWorkLog}
+        onDelete={handleDeleteWorkLog}
         onLoadLog={loadWorkLogByDate}
         isLoading={isSaving}
       />
