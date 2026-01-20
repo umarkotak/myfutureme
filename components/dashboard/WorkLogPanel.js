@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
 import Markdown from "react-markdown";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, MoreHorizontal, Trash2, Sparkles, Pencil } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, Trash2, Sparkles, Pencil, Download } from "lucide-react";
+import api from "@/lib/api";
 
 function getMonthKey(dateStr) {
   if (!dateStr) return "";
@@ -44,6 +45,18 @@ function formatBubbleDate(dateStr) {
   });
 }
 
+function getMonthDateRange(monthKey) {
+  // monthKey is in format "YYYY-MM"
+  const [year, month] = monthKey.split("-");
+  const startDate = `${year}-${month}-01`;
+
+  // Get the last day of the month
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${month}-${lastDay}`;
+
+  return { startDate, endDate };
+}
+
 export default function WorkLogPanel({
   workLogs = [],
   onSave,
@@ -64,6 +77,7 @@ export default function WorkLogPanel({
   const [editContent, setEditContent] = useState({});
   const [savingLogs, setSavingLogs] = useState({});
   const [collapsedMonths, setCollapsedMonths] = useState({});
+  const [downloadingMonth, setDownloadingMonth] = useState(null);
   const saveTimerRef = useRef({});
 
   // Sort logs by date (oldest first, newest at bottom like Slack)
@@ -155,6 +169,38 @@ export default function WorkLogPanel({
     }));
   };
 
+  // Handle download worklogs for a month
+  const handleDownload = async (e, monthKey) => {
+    e.stopPropagation();
+    const { startDate, endDate } = getMonthDateRange(monthKey);
+    setDownloadingMonth(monthKey);
+
+    try {
+      const { data, error } = await api.downloadWorkLogs(startDate, endDate);
+      if (error) {
+        toast.error(error.message || "Failed to download worklogs");
+        return;
+      }
+
+      // Create a blob and trigger download
+      const blob = new Blob([data], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `worklogs-${monthKey}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Worklogs downloaded");
+    } catch (error) {
+      toast.error(error.message || "Failed to download worklogs");
+    } finally {
+      setDownloadingMonth(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Chat-style Log List */}
@@ -236,6 +282,20 @@ export default function WorkLogPanel({
                           }}
                         >
                           <Sparkles className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          title="Download Worklogs"
+                          onClick={(e) => handleDownload(e, getMonthKey(log.date))}
+                          disabled={downloadingMonth === getMonthKey(log.date)}
+                        >
+                          {downloadingMonth === getMonthKey(log.date) ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                          ) : (
+                            <Download className="h-4 w-4" />
+                          )}
                         </Button>
                         <Button
                           variant="ghost"
