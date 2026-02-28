@@ -123,14 +123,6 @@ export default function WorkLogsPage() {
     loadWorkLogs();
   }, [user]);
 
-  const loadWorkLogByDate = async (date) => {
-    const { data, error } = await api.getWorkLogByDate(date);
-    if (error) {
-      return null;
-    }
-    return data;
-  };
-
   const handleSaveWorkLog = async (logData) => {
     const { error } = await api.upsertWorkLog(logData);
     if (error) {
@@ -142,17 +134,11 @@ export default function WorkLogsPage() {
     setWorkLogs(data?.data || []);
   };
 
-  const handleDeleteWorkLog = async (date) => {
-    const { error } = await api.deleteWorkLog(date);
-    if (error) {
-      throw new Error(error.message || "Failed to delete work log");
+  const handleMonthSelect = async (month) => {
+    if (selectedMonth === month) {
+      return;
     }
 
-    const { data } = await api.listWorkLogs();
-    setWorkLogs(data?.data || []);
-  };
-
-  const handleMonthSelect = async (month) => {
     setSelectedMonth(month);
     setSummaryError(null);
     setIsLoadingSummary(true);
@@ -334,11 +320,8 @@ export default function WorkLogsPage() {
             <WorkLogPanel
               workLogs={workLogs}
               onSave={handleSaveWorkLog}
-              onDelete={handleDeleteWorkLog}
-              onLoadLog={loadWorkLogByDate}
               isLoading={isSaving}
               onMonthSelect={handleMonthSelect}
-              onGenerateSummary={handleGenerateSummary}
               selectedMonth={selectedMonth}
             />
           </div>

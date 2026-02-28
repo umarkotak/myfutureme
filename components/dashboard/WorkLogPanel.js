@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-toastify";
-import Markdown from "react-markdown";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, MoreHorizontal, Trash2, Sparkles, Pencil, Download } from "lucide-react";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import api from "@/lib/api";
 
 function getMonthKey(dateStr) {
@@ -60,11 +59,8 @@ function getMonthDateRange(monthKey) {
 export default function WorkLogPanel({
   workLogs = [],
   onSave,
-  onDelete,
-  onLoadLog,
   isLoading,
   onMonthSelect,
-  onGenerateSummary,
   selectedMonth,
 }) {
   const containerRef = useRef(null);
@@ -73,7 +69,6 @@ export default function WorkLogPanel({
   const [selectedDate, setSelectedDate] = useState(() => {
     return new Date().toISOString().split("T")[0];
   });
-  const [editingLogId, setEditingLogId] = useState(null);
   const [editContent, setEditContent] = useState({});
   const [savingLogs, setSavingLogs] = useState({});
   const [collapsedMonths, setCollapsedMonths] = useState({});
@@ -104,7 +99,7 @@ export default function WorkLogPanel({
       clearTimeout(saveTimerRef.current[logId]);
     }
 
-    // Set new timer for 1 second delay
+    // Set new timer for 2 seconds delay
     const log = sortedLogs.find((l) => l.id === logId);
     setSavingLogs(prev => ({ ...prev, [logId]: true }));
     saveTimerRef.current[logId] = setTimeout(async () => {
@@ -119,7 +114,7 @@ export default function WorkLogPanel({
       } finally {
         setSavingLogs(prev => ({ ...prev, [logId]: false }));
       }
-    }, 1000);
+    }, 2000);
   }, [sortedLogs, onSave]);
 
   // Cleanup timers
@@ -145,19 +140,6 @@ export default function WorkLogPanel({
       }, 100);
     } catch (error) {
       toast.error(error.message || "Failed to add work log");
-    }
-  };
-
-  // Handle delete log
-  const handleDeleteLog = async (e, log) => {
-    e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this work log?")) return;
-
-    try {
-      await onDelete(formatDateForInput(log.date));
-      toast.success("Work log deleted");
-    } catch (error) {
-      toast.error(error.message || "Failed to delete work log");
     }
   };
 
@@ -275,18 +257,6 @@ export default function WorkLogPanel({
                           variant="ghost"
                           size="sm"
                           className="h-7 w-7 p-0"
-                          title="Generate Summary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onGenerateSummary?.(getMonthKey(log.date));
-                          }}
-                        >
-                          <Sparkles className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
                           title="Download Worklogs"
                           onClick={(e) => handleDownload(e, getMonthKey(log.date))}
                           disabled={downloadingMonth === getMonthKey(log.date)}
@@ -297,13 +267,6 @@ export default function WorkLogPanel({
                             <Download className="h-4 w-4" />
                           )}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -311,7 +274,7 @@ export default function WorkLogPanel({
 
                 {/* Chat Bubble - Only show if not collapsed */}
                 {!isCollapsed && (
-                  <div className="px-4 py-2 group">
+                  <div className="px-4 py-2">
                     <div
                       className={`bg-card border border-border rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer ${
                         selectedMonth === getMonthKey(log.date) ? "ring-1 ring-primary/30" : ""
@@ -321,62 +284,26 @@ export default function WorkLogPanel({
                         onMonthSelect?.(getMonthKey(log.date));
                       }}
                     >
-                      {editingLogId === log.id ? (
-                        <div className="relative">
-                          <textarea
-                            value={editContent[log.id] ?? log.content}
-                            onChange={(e) => handleEditChange(log.id, e.target.value)}
-                            onBlur={() => setEditingLogId(null)}
-                            autoFocus
-                            rows={Math.max(3, (editContent[log.id] ?? log.content).split('\n').length)}
-                            className={`w-full bg-transparent border-none outline-none text-sm resize-none ${savingLogs[log.id] ? 'opacity-70' : ''}`}
-                            placeholder="What did you work on?"
-                          />
+                      <div className="relative">
+                        <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-border/50">
+                          <span className="text-xs text-muted-foreground">
+                            {formatBubbleDate(log.date)}
+                          </span>
                           {savingLogs[log.id] && (
-                            <div className="absolute top-0 right-0 text-xs text-muted-foreground flex items-center gap-1">
+                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                               <div className="animate-spin h-3 w-3 border border-primary border-t-transparent rounded-full"></div>
                               <span>Saving...</span>
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <>
-                          {/* Timestamp with edit/delete buttons - at top */}
-                          <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-border/50">
-                            <span className="text-xs text-muted-foreground">
-                              {formatBubbleDate(log.date)}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingLogId(log.id);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-primary p-1 rounded"
-                                title="Edit work log"
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </button>
-                              <button
-                                onClick={(e) => handleDeleteLog(e, log)}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive p-1 rounded"
-                                title="Delete work log"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </button>
-                            </div>
-                          </div>
-                          <div className="prose prose-sm max-w-none text-foreground prose-headings:text-foreground prose-p:text-foreground prose-strong:text-foreground prose-code:text-foreground prose-li:text-foreground prose-a:text-primary">
-                            {log.content ? (
-                              <Markdown>
-                                {log.content}
-                              </Markdown>
-                            ) : (
-                              <p className="text-muted-foreground italic">Click to add content...</p>
-                            )}
-                          </div>
-                        </>
-                      )}
+                        <textarea
+                          value={editContent[log.id] ?? log.content}
+                          onChange={(e) => handleEditChange(log.id, e.target.value)}
+                          rows={Math.max(4, (editContent[log.id] ?? log.content).split("\n").length)}
+                          className={`w-full rounded-md border border-[#3c3c3c] bg-[#1e1e1e] px-3 py-2 font-mono text-[13px] leading-6 text-[#d4d4d4] resize-y focus:outline-none focus:ring-1 focus:ring-[#007acc] ${savingLogs[log.id] ? "opacity-80" : ""}`}
+                          placeholder="What did you work on?"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
