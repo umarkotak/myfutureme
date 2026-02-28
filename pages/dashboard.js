@@ -11,7 +11,7 @@ export default function Dashboard() {
     if (!cookies.auth_token) {
       router.replace("/login");
     } else {
-      router.replace("/applications");
+      router.replace("/a/dashboard");
     }
   }, [router, cookies.auth_token]);
 
