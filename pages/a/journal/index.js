@@ -373,6 +373,7 @@ export default function JournalIndexPage() {
                         </td>
                         <td className="px-3 py-2">
                           <p className="truncate text-sm font-semibold text-[#e8e8e8]">{journal.title}</p>
+                          <p className="mt-0.5 truncate text-xs text-[#b4b4b4]">{journal.video_title || "Untitled video"}</p>
                           <p className="mt-0.5 truncate text-xs text-[#8f9397]">{formatDate(journal.created_at)}</p>
                         </td>
                         <td className="px-3 py-2">
